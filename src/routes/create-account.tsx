@@ -43,7 +43,6 @@ export default function CreateAccount() {
         email,
         password
       );
-      console.log(credentials.user);
       await updateProfile(credentials.user, { displayName: name });
       navigate("/");
     } catch (e) {
