@@ -6,10 +6,11 @@ import {
   uploadBytes,
 } from "firebase/storage";
 import { useState } from "react";
-import ClipLoader from "react-spinners/ClipLoader";
 import styled from "styled-components";
 import { auth, db, storage } from "../firebase";
 import { ITweet } from "./timeline";
+import { CancelButton, DeleteButton, EditButton, SaveButton } from "./buttons";
+import ButtonLoadingSpinner from "./button-loading-spinner";
 
 const Wrapper = styled.div`
   display: flex;
@@ -57,46 +58,13 @@ const TextArea = styled.textarea`
   }
 `;
 
-const Button = styled.button`
-  color: white;
-  font-weight: 600;
-  border: 0;
-  font-size: 12px;
-  padding: 5px 10px;
-  text-transform: uppercase;
-  border-radius: 5px;
-  cursor: pointer;
-`;
-const CancelButton = styled(Button)`
-  background-color: orange;
-`;
-const DeleteButton = styled(Button)`
-  background-color: tomato;
-`;
-const EditButton = styled(Button)`
-  background-color: green;
-  margin-right: 0.5rem;
-`;
-const SaveButton = styled(Button)`
-  background-color: blue;
-  margin-right: 0.5rem;
-`;
-
 const EditPhoto = styled.div`
   margin-top: 0.375rem;
   display: grid;
   text-align: center;
   gap: 0.5rem;
 `;
-const EditPhotoLabel = styled(Button)`
-  /* display: block; */
-  /* position: absolute;
-  right: 0.25rem;
-  top: 0.25rem;
-  padding: 0.375rem;
-  display: flex;
-  align-items: center;
-  justify-content: center; */
+const EditPhotoLabel = styled(EditButton)`
   background-color: green;
 
   svg {
@@ -107,10 +75,6 @@ const EditPhotoLabel = styled(Button)`
 const EditPhotoInput = styled.input`
   display: none;
 `;
-
-const ButtonLoadingSpinner = () => (
-  <ClipLoader color="white" size={12} cssOverride={{ marginRight: ".25rem" }} />
-);
 
 export default function Tweet({ id, userId, username, photo, tweet }: ITweet) {
   const [isLoading, setLoading] = useState(false);

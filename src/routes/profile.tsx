@@ -13,6 +13,9 @@ import {
 } from "firebase/firestore";
 import { ITweet } from "../components/timeline";
 import Tweet from "../components/tweet";
+import { EditButton, SaveButton } from "../components/buttons";
+import { Input } from "../components/auth-components";
+import ButtonLoadingSpinner from "../components/button-loading-spinner";
 
 const Wrapper = styled.div`
   display: flex;
@@ -40,8 +43,11 @@ const AvatarImg = styled.img`
 const AvatarInput = styled.input`
   display: none;
 `;
-const Name = styled.span`
+const Name = styled.div`
   font-size: 22px;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 `;
 const Tweets = styled.div`
   display: flex;
@@ -49,11 +55,22 @@ const Tweets = styled.div`
   flex-direction: column;
   gap: 10px;
 `;
+const NameForm = styled.form`
+  display: flex;
+  gap: 0.5rem;
+
+  button {
+    flex-shrink: 0;
+  }
+`;
 
 export default function Profile() {
-  const user = auth.currentUser;
+  let user = auth.currentUser;
+  const [isLoading, setLoading] = useState(false);
   const [avatar, setAvatar] = useState(user?.photoURL);
   const [tweets, setTweets] = useState<ITweet[]>([]);
+  const [editName, setEditName] = useState(false);
+  const [name, setName] = useState("");
   const onAvatarChange: React.ChangeEventHandler<HTMLInputElement> = async (
     event
   ) => {
@@ -82,9 +99,41 @@ export default function Profile() {
     });
     setTweets(tweets);
   };
+  const onNameSubmit: React.FormEventHandler<HTMLFormElement> = async (
+    event
+  ) => {
+    event.preventDefault();
+    if (user === null || name === "") return;
+    if (name === user.displayName) {
+      alert("Same as previous name.");
+      return;
+    }
+    const ok = confirm("Are you sure update name?");
+    if (!ok) return;
+    try {
+      setLoading(true);
+      await updateProfile(user, { displayName: name });
+      user = auth.currentUser;
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setEditName(false);
+      setLoading(false);
+    }
+  };
+  const onNameInputChange: React.ChangeEventHandler<HTMLInputElement> = (
+    event
+  ) => {
+    setName(event.target.value);
+  };
+  const onEditNameButtonClick = () => {
+    if (user === null) return;
+    setEditName(true);
+    setName(user.displayName ?? "");
+  };
   useEffect(() => {
     fetchTweets();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   return (
     <Wrapper>
@@ -114,7 +163,27 @@ export default function Profile() {
         accept="image/*"
         onChange={onAvatarChange}
       />
-      <Name>{user?.displayName ?? "Anonymous"}</Name>
+      <>
+        {editName ? (
+          <NameForm onSubmit={onNameSubmit}>
+            <Input
+              id="name"
+              type="text"
+              placeholder="name"
+              value={name}
+              onChange={onNameInputChange}
+            />{" "}
+            <SaveButton type="submit" disabled={isLoading}>
+              {isLoading ? <ButtonLoadingSpinner /> : null} Save
+            </SaveButton>
+          </NameForm>
+        ) : (
+          <Name>
+            {user?.displayName ?? "Anonymous"}{" "}
+            <EditButton onClick={onEditNameButtonClick}>Edit</EditButton>
+          </Name>
+        )}
+      </>
 
       <Tweets>
         {tweets.map((tweet) => (
