@@ -2,15 +2,17 @@ import { deleteDoc, deleteField, doc, updateDoc } from "firebase/firestore";
 import {
   deleteObject,
   getDownloadURL,
+  list,
   ref,
   uploadBytes,
 } from "firebase/storage";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import styled from "styled-components";
 import { auth, db, storage } from "../firebase";
 import { ITweet } from "./timeline";
 import { CancelButton, DeleteButton, EditButton, SaveButton } from "./buttons";
 import ButtonLoadingSpinner from "./button-loading-spinner";
+import AvatarIcon from "./avatar-icon";
 
 const Wrapper = styled.div`
   display: flex;
@@ -26,6 +28,21 @@ const Photo = styled.img`
   width: 100px;
   height: 100px;
   border-radius: 0.5rem;
+`;
+const User = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+`;
+const Avatar = styled.img`
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: ${(props) => (props.as === "div" ? "1px solid white" : undefined)};
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 `;
 const Username = styled.span`
   font-weight: 600;
@@ -82,6 +99,7 @@ export default function Tweet({ id, userId, username, photo, tweet }: ITweet) {
   const [updatingPhoto, setUpdatingPhoto] = useState<File | null>(null);
   const [deletingPhoto, setDeletingPhoto] = useState(false);
   const [editMode, setEditMode] = useState(false);
+  const [avatar, setAvatar] = useState("");
   const user = auth.currentUser;
   const onDelete = async () => {
     if (user?.uid !== userId) return;
@@ -154,10 +172,30 @@ export default function Tweet({ id, userId, username, photo, tweet }: ITweet) {
     setUpdatingPhoto(null);
     setDeletingPhoto(true);
   };
+  const getAvatar = async () => {
+    const avatarRefList = await list(ref(storage, "avatars"));
+    const avatarRef = avatarRefList.items.find(({ name }) => name === userId);
+    if (!avatarRef) return;
+    const avatarUrl = await getDownloadURL(avatarRef);
+    setAvatar(avatarUrl);
+  };
+  useEffect(() => {
+    getAvatar();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   return (
     <Wrapper>
       <Column style={{ flexGrow: 1 }}>
-        <Username>{username}</Username>
+        <User>
+          {avatar ? (
+            <Avatar src={avatar} />
+          ) : (
+            <Avatar as="div">
+              <AvatarIcon size={16} />
+            </Avatar>
+          )}
+          <Username>{username}</Username>
+        </User>
         {editMode ? (
           <form onSubmit={onSave}>
             <TextArea
